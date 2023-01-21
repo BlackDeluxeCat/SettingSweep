@@ -5,11 +5,16 @@ var highscore = new Seq();//High Score of Maps
 var save = new Seq();//campaign
 var other = new Seq();
 
+var current;
+
 var catT = new Table();
 var listT = new Table();
 var valueT = new Table();
 
 var cont;
+
+var regex;
+var regtext = "";
 
 Events.on(ClientLoadEvent, e => {
     buildCatT();
@@ -20,6 +25,7 @@ Events.on(ClientLoadEvent, e => {
     });
 
     Vars.ui.settings.shown(() => {
+        updateKeys();
         rebuild();
     });
 });
@@ -32,6 +38,29 @@ function rebuild(){
     cont.image().growX().height(4).color(Color.forest);
     cont.row();
     cont.add(catT).growX();
+    cont.row();
+
+    cont.table(cons(ttt => {
+        ttt.image().size(36).update(i => {
+            i.setColor(regex == null && !regtext.length == 0 ? Color.scarlet : Color.forest);
+        });
+        var regf = ttt.field("", str => {
+            regtext = str;
+            regex = null;
+            try{
+                if(str.length > 0) regex = java.util.regex.Pattern.compile(str);
+            }catch(e){
+                Log.err(e);
+                regex = null;
+            }
+            buildListT(null);
+        }).growX().get();
+        regf.setMessageText("Regular expression filter");
+        ttt.button("[X]", Styles.flatt, () => {regf.clearText(); regf.change();}).size(36);
+        ttt.button("[scarlet]Delete All", Styles.flatt, () => Vars.ui.showConfirm(regex == null ? "Delete All In List?" : "Delete These Keys Matching: " + regex.pattern() + "?", () => {
+            removeByRegex();
+        })).size(100, 36).disabled(b => current == null || current.isEmpty());
+    })).growX();
     cont.row();
     cont.image().growX().height(4).color(Color.forest);
     cont.row();
@@ -51,28 +80,25 @@ function buildCatT(){
     catT.button("Save", Styles.flatt, () => buildListT(save));
     catT.button("Campaign Req", Styles.flatt, () => buildListT(req));
     catT.button("Campaign Unlocked", Styles.flatt, () => buildListT(ulk));
-}
 
-function buildListT(seq){
-    updateKeys();
+    catT.row();
 
-    listT.clear();
-    seq.each(name => {
-        listT.button(name, Styles.flatt, () => {
-            buildValueT(name, Core.settings.get(name, ""));
-        }).grow().maxHeight(36).disabled(b => !Core.settings.has(name)).with(l => l.getLabel().setAlignment(Align.left));
-        listT.button("X", Styles.flatt, () => Vars.ui.showConfirm("Delete Key: " + name + " ?", () => {
-            Core.settings.remove(name);
-        })).size(36).disabled(b => !Core.settings.has(name));
-        listT.row();
-    });
+    catT.label(() => all.size.toString()).get().setAlignment(Align.center);
+    catT.label(() => other.size.toString()).get().setAlignment(Align.center);
+    catT.label(() => highscore.size.toString()).get().setAlignment(Align.center);
+    catT.label(() => save.size.toString()).get().setAlignment(Align.center);
+    catT.label(() => req.size.toString()).get().setAlignment(Align.center);
+    catT.label(() => ulk.size.toString()).get().setAlignment(Align.center);
 }
 
 function buildValueT(name, object){
     valueT.clear();
     valueT.add(name + ":").color(Color.gray).growX();
+    valueT.button("[scarlet]Delete", Styles.flatt, () => Vars.ui.showConfirm("Delete Key: " + name + " ?", () => {
+        Core.settings.remove(name);
+    })).size(100, 36).disabled(b => !Core.settings.has(name));
     valueT.row();
-    valueT.labelWrap(object == null ? "null" : object.toString()).growX();
+    valueT.labelWrap(object == null ? "null" : object.toString()).growX().colspan(2);
 }
 
 function updateKeys(){
@@ -96,5 +122,28 @@ function updateKeys(){
         else if(name.startsWith("save-")) save.add(name);
         else if(name.startsWith("hiscore")) highscore.add(name);
         else other.add(name);
+    });
+}
+
+function buildListT(seq){
+    updateKeys();
+    if(seq != null) current = seq;
+
+    listT.clear();
+    if(current == null) return;
+
+    current.each(name => {
+        if(regex != null && !regex.matcher(name).matches()) return;
+        listT.button(name, Styles.flatt, () => {
+            buildValueT(name, Core.settings.get(name, ""));
+        }).grow().maxHeight(36).disabled(b => !Core.settings.has(name)).with(l => l.getLabel().setAlignment(Align.left));
+        listT.row();
+    });
+}
+
+function removeByRegex(){
+    current.each(name => {
+        if(regex != null && !regex.matcher(name).matches()) return;
+        Core.settings.remove(name);
     });
 }
