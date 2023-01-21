@@ -14,7 +14,7 @@ var cont;
 Events.on(ClientLoadEvent, e => {
     buildCatT();
 
-    Vars.ui.settings.addCategory("Setting Sweep", t => {
+    Vars.ui.settings.addCategory("Setting Sweep", new TextureRegionDrawable(new TextureRegion(Vars.mods.getMod("settingsweep").iconTexture)), t => {
         t.clear();
         cont = t;
     });
