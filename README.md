@@ -1,2 +1,2 @@
 # SettingSweep
-A Mindustry mod that helps you clean up 有人
+A Mindustry mod that helps you clean up your settings.

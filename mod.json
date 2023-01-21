@@ -1,0 +1,9 @@
+{
+	"name": "SettingSweep",
+	"displayName": "Setting Sweep",
+	"author": "BlackDeluxeCat",
+	"description": "Clean up your settings!",
+	"version": "1.0",
+	"hidden": true,
+	"minGameVersion": 136
+}
